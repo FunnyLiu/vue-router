@@ -111,7 +111,7 @@ export default {
       })
       fillPropsinData(component, data, route, configProps)
     }
-
+    // 根据路由的变化渲染出路由所对应的组件
     return h(component, data, children)
   }
 }

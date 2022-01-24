@@ -1,3 +1,115 @@
+
+# 源码分析
+
+## 文件结构
+
+``` bash
+/Users/liufang/openSource/FunnyLiu/vue-router
+├── src
+|  ├── components
+|  |  ├── link.js
+|  |  └── view.js
+|  ├── create-matcher.js
+|  ├── create-route-map.js
+|  ├── history
+|  |  ├── abstract.js
+|  |  ├── base.js
+|  |  ├── hash.js
+|  |  └── html5.js
+|  ├── index.js
+|  ├── install.js
+|  └── util
+|     ├── async.js
+|     ├── dom.js
+|     ├── errors.js
+|     ├── location.js
+|     ├── misc.js
+|     ├── params.js
+|     ├── path.js
+|     ├── push-state.js
+|     ├── query.js
+|     ├── resolve-components.js
+|     ├── route.js
+|     ├── scroll.js
+|     ├── state-key.js
+|     └── warn.js
+
+```
+
+## 外部模块依赖
+
+![img](./outer.svg)
+
+## 内部模块依赖
+
+![img](./inner.svg)
+  
+
+
+
+## 知识点
+
+
+### 初始化时做了什么？
+
+
+
+插件注册的时候的核心逻辑：给vue组件增加$router和$route，并全局注册RouterView和RouterLink组件。
+
+``` js
+// mixin
+  Vue.mixin({
+    beforeCreate () {
+      // $options.router存在则表示是根组件
+      if (isDef(this.$options.router)) {
+        this._routerRoot = this
+        this._router = this.$options.router
+        this._router.init(this)
+        Vue.util.defineReactive(this, '_route', this._router.history.current)
+      } else {
+        // 不是根组件则从父组件中获取
+        this._routerRoot = (this.$parent && this.$parent._routerRoot) || this
+      }
+      registerInstance(this, this)
+    },
+    destroyed () {
+      registerInstance(this)
+    }
+  })
+  //$route 是“路由信息对象”，包括 path，params，hash，query，fullPath，matched，name 等路由信息参数。
+  // 而 $router 是“路由实例”对象包括了路由的跳转方法，钩子函数等。
+  Object.defineProperty(Vue.prototype, '$router', {
+    get () { return this._routerRoot._router }
+  })
+
+  Object.defineProperty(Vue.prototype, '$route', {
+    get () { return this._routerRoot._route }
+  })
+  // 注册组件
+  Vue.component('RouterView', View)
+  Vue.component('RouterLink', Link)
+```
+
+
+
+### router-view组件做了什么？
+
+router-view组件的作用是根据路由的变化渲染出路由所对应的组件。
+
+
+``` js
+// 根据路由的变化渲染出路由所对应的组件
+return h(component, data, children)
+```
+
+### 路由跳转的方法实现？
+
+以push为例，分为两种情况，hash情况下就是通过`window.location.hash = path`来实现，history情况下就是通过`history.pushState({ key: setStateKey(genStateKey()) }, '', url)` 来实现。
+
+
+
+
+
 # vue-router [![Build Status](https://img.shields.io/circleci/project/github/vuejs/vue-router/dev.svg)](https://circleci.com/gh/vuejs/vue-router)
 
 > This is vue-router 3.0 which works only with Vue 2.0. For the 1.x router see the [1.0 branch](https://github.com/vuejs/vue-router/tree/1.0).
